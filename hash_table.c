@@ -7,7 +7,7 @@ hash_table_t create_hash_table(unsigned int num){
 	num=(num>0)?num:101;
 	ht=ALLOC(hash_table_,1);
 	data=ALLOC(node_t,num);
-	for(i=0;i<num;++i){ 	data[i]=create_node(0); 	}
+	for(i=0;i<num;++i){ 	data[i]=create_atom(0); 	}
 	ht->data=data;
 	ht->num=num;
 	return ht;

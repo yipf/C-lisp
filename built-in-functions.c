@@ -12,7 +12,7 @@ int init_functions(){
 
 node_t make_function_node(char* key,meta_func func){
 	node_t node;
-	node=create_node(key);
+	node=create_atom(key);
 	node->type=FUNCTION;
 	(node->value).func=func;
 	return node;
@@ -33,7 +33,7 @@ NAME_FUNC(sin){
 
 NAME_FUNC(lambda){
 	node_t list,child;
-	child=create_node("lambda");
+	child=create_atom("lambda");
 	append_node(child,arg);
 	list=create_list(child);
 	list->type=LAMBDA;

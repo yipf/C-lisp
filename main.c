@@ -12,7 +12,7 @@
  
  node_t create_number(int value){
      node_t n;
-     n=create_node("a");
+     n=create_atom("a");
      n->type=INTEGER;
      (n->value).ivalue=value;
      return n;
@@ -41,14 +41,14 @@
  * 	
  * 	ht=create_hash_table(11);
  * 	
- * 	set_hash_table(ht,"a",create_node("A"));
- *      set_hash_table(ht,"b",create_node("B"));
- *      set_hash_table(ht,"c",create_node("C"));
- *      set_hash_table(ht,"d",create_node("D"));
- *      set_hash_table(ht,"e",create_node("E"));
- *      set_hash_table(ht,"f",create_node("F"));
- *      set_hash_table(ht,"g",create_node("G"));
- *      set_hash_table(ht,"cc",create_node("G"));
+ * 	set_hash_table(ht,"a",create_atom("A"));
+ *      set_hash_table(ht,"b",create_atom("B"));
+ *      set_hash_table(ht,"c",create_atom("C"));
+ *      set_hash_table(ht,"d",create_atom("D"));
+ *      set_hash_table(ht,"e",create_atom("E"));
+ *      set_hash_table(ht,"f",create_atom("F"));
+ *      set_hash_table(ht,"g",create_atom("G"));
+ *      set_hash_table(ht,"cc",create_atom("G"));
  * 
  * 
  * 	

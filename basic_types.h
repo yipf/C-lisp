@@ -43,7 +43,7 @@ typedef struct node_{
 	struct node_ * next;
 }node_,*node_t;
 
-node_t create_node(char* key);
+node_t create_atom(char* key);
 node_t create_list(node_t child);
 node_t copy_node_props(node_t src,node_t dst);
 node_t map_children(meta_func func,node_t child,node_t extra);

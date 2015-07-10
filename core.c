@@ -20,7 +20,7 @@ string_t uniq_string(char str[]){
 		count=strlen(str)+1;
 		new_str=ALLOC(char,count);
 		memcpy(new_str,str,count);
-		set_hash_table(UNIQ_STRINGS,new_str,create_node(new_str));
+		set_hash_table(UNIQ_STRINGS,new_str,create_atom(new_str));
 	}
 	return new_str;
 }
@@ -51,7 +51,7 @@ node_t gen_atom_node(char buffer[],size_t count,int inside_string,int quote){
 	value_t value;
 	char *str_end;
 	buffer[count]=string_stop_flag;
-	node=create_node(0);
+	node=create_atom(0);
 	if(inside_string){
 		buffer=uniq_string(buffer);
 		node->type=STRING;
@@ -90,7 +90,7 @@ node_t gen_atom_node(char buffer[],size_t count,int inside_string,int quote){
 node_t quote_node(node_t node,int quote){
 	node_t child;
 	while((quote--)>0){
-		child=create_node(QUOTE);
+		child=create_atom(QUOTE);
 		append_node(child,node);
 		node=create_list(child);
 	}
@@ -118,7 +118,7 @@ node_t stream2node(FILE* stream){
 	int inside_string,quote_count;
 	inside_string=0;	/* flag to indicate if current parse is inside a string quoted by "  */
 	quote_count=0;
-	first=create_node(0);
+	first=create_atom(0);
 	prev=first;
 	while((ch=fgetc(stream))!=EOF){ 	/* main loop */
 		if(inside_string){ 	/* if a string is parsing outside a " block */

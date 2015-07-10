@@ -2,7 +2,7 @@
 
 char TYPE_STRINGS[20][20]={"LIST","FUNCTION","LAMBDA","MACRO","ATOM","ARG","INTEGER","DOUBLE","STRING","STREAM"};
 
-node_t create_node(char* key){
+node_t create_atom(char* key){
 	node_t n;
 	n=ALLOC(node_,1);
 	n->key=key;
@@ -102,7 +102,7 @@ node_t node2stream_(node_t node,node_t extra){
 
 node_t node2stream(node_t node,FILE* stream){
 	ostream=stream?stream:stdout;
-	return node2stream_(node,create_node(" "));
+	return node2stream_(node,create_atom(" "));
 }
 
 node_t make_stack(node_t bottom){
