@@ -22,7 +22,7 @@ node_t make_function_node(char* key,meta_func func){
 NAME_FUNC(define){
 	node_t next;
 	next=arg->next;
-	if(next){		register_node(arg->key,next);	}
+	if(next){		set_value(arg->key,next);	}
 	return arg;
 }
 

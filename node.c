@@ -1,6 +1,17 @@
-#include "basic_types.h"
+#include "node.h"
 
 char TYPE_STRINGS[20][20]={"LIST","FUNCTION","LAMBDA","MACRO","ATOM","ARG","INTEGER","DOUBLE","STRING","STREAM"};
+
+
+node_t create_node(char* key,int type, value_t value, node_t next){
+	node_t n;
+	n=ALLOC(node_,1);
+	n->key=key;
+	n->type=type;
+	memcpy(&(n->value),&(value),sizeof(value_t));
+	n->next=next;
+	return n;
+}
 
 node_t create_atom(char* key){
 	node_t n;

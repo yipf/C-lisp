@@ -7,35 +7,11 @@ static char BUFFER[100]={'\0'};
 static char QUOTE[]="quote";
 static size_t count=0;
 static char string_stop_flag='\0';
-hash_table_t ENV,UNIQ_STRINGS;
 
-string_t uniq_string(char str[]){
-	node_t str_node;
-	char* new_str;
-	size_t count;
-	str_node=get_hash_table(UNIQ_STRINGS,str);
-	if(str_node){ /* if the string is existing, return the stored key*/
-		new_str=str_node->key;
-	}else{ /* otherwise, copy the string and register it to UNIQ_STRINGS */
-		count=strlen(str)+1;
-		new_str=ALLOC(char,count);
-		memcpy(new_str,str,count);
-		set_hash_table(UNIQ_STRINGS,new_str,create_atom(new_str));
-	}
-	return new_str;
-}
-
-node_t register_node(hash_key_t key, node_t node){
-	set_hash_table(ENV,key,node);
-#ifdef DEBUG
-	print_hash_table(ENV,0);printf("\n");
-#endif
-	return node; 
-}
 
 int init_env(size_t num,size_t snum){
-	ENV=create_hash_table((num>0)?num:199);
-	UNIQ_STRINGS=create_hash_table((snum>0)?snum:199);
+	init_environment((num>0)?num:199);
+	init_strings((num>0)?num:199);
 	return 0;
 }
 
@@ -53,7 +29,7 @@ node_t gen_atom_node(char buffer[],size_t count,int inside_string,int quote){
 	buffer[count]=string_stop_flag;
 	node=create_atom(0);
 	if(inside_string){
-		buffer=uniq_string(buffer);
+		buffer=global_string(buffer);
 		node->type=STRING;
 		node->key=buffer;
 		 (node->value).svalue=buffer; 
@@ -77,7 +53,7 @@ node_t gen_atom_node(char buffer[],size_t count,int inside_string,int quote){
 	SHOW(ENV,"%p")
 #endif
 	/* otherwise, return a symbol */
-	buffer=uniq_string(buffer);
+	buffer=global_string(buffer);
 #ifdef DEBUG
 	SHOW(buffer,"%p")
 #endif
@@ -195,7 +171,7 @@ int pretty_print_string(char * str,FILE* stream){
 
 node_t push_args(node_t args,node_t inputs){
 	while(args&&inputs){
-		register_node(args->key,inputs);
+		push_value(args->key,inputs);
 		args=args->next;
 		inputs=inputs->next;
 	}
@@ -204,7 +180,7 @@ node_t push_args(node_t args,node_t inputs){
 
 node_t pop_args(node_t args,node_t end){
 	while(args&&(args!=end)){
-		set_hash_table(ENV,args->key,0);
+		pop_value(args->key);
 		args=args->next;
 	}
 	return end;
@@ -217,7 +193,7 @@ node_t eval(node_t node,node_t extra){
 		value=node->value;
 		switch(node->type){
 			case ATOM:
-				return get_hash_table(ENV,node->key);
+				return get_value(node->key);
 				break;
 			case LIST: 
 				var=(node->value).child;

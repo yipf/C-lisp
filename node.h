@@ -1,20 +1,20 @@
-#ifndef BASIC_TYPES_H 
-#define BASIC_TYPES_H 
+#ifndef NODE_H 
+#define NODE_H 
+
+#include "helper.h"
+#include "global_string.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
+
 #define DEBUG_
 
 
-#define SHOW(var,format) printf("\n%s:%d:\t%s\t:: ",__FILE__,__LINE__,#var);printf(format,var);
 
 #define SHOW_NODE(var) 	printf("\n%s:%d:\t%s\t:: ",__FILE__,__LINE__,#var);node2stream(var,stdout);printf("\n");;
-
-#define ALLOC(data_type,size) (data_type*)malloc(sizeof(data_type)*(size))
-
-
 
 enum TYPES{LIST=0,FUNCTION,LAMBDA,MACRO,ATOM,ARG,INTEGER,DOUBLE,STRING,STREAM};
 char TYPE_STRINGS[20][20];
@@ -43,8 +43,11 @@ typedef struct node_{
 	struct node_ * next;
 }node_,*node_t;
 
+node_t create_node(char* key,int type, value_t value, node_t next);
+
 node_t create_atom(char* key);
 node_t create_list(node_t child);
+
 node_t copy_node_props(node_t src,node_t dst);
 node_t map_children(meta_func func,node_t child,node_t extra);
 node_t copy_node(node_t src,node_t dst);
