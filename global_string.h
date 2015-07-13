@@ -2,7 +2,6 @@
 #define GLOBAL_STRING_H 
 
 #include "helper.h"
-#include <stdlib.h>
 
 struct str_element_;
 

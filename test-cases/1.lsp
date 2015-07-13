@@ -1,23 +1,8 @@
- (sin 1.57) ;; tests 
- `(sin 1.5)
- 
- (define `x sin )
- 
- (sin 2.0)
- x
- sin
- 
- (define `x (lambda `(xx) `(sin xx)))
- 
- SEG
- x
- 
-(define `f x)
- 
-f
+(sin 1.0)
+(sin (sin 1.57))
 
-(f 2.0)
+(define `x sin)
 
-(f 1.57)
+(x (x 1.57))
  
  "end"

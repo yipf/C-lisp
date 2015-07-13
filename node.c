@@ -105,7 +105,7 @@ node_t node2stream_(node_t node,node_t extra){
 			fprintf(ostream,"%s%s",node->key,sep);
 			break;
 		default: 
-			fprintf(ostream,"[%s|%s]%s",node->key,TYPE_STRINGS[node->type],sep);
+			fprintf(ostream,"%s[%s]%s",node->key,TYPE_STRINGS[node->type],sep);
 			break;
 	}
 	return node;
