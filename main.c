@@ -27,7 +27,7 @@
      node=stream2node(stream?stream:stdin);
      stream=(argc>2)?fopen(argv[2],"w"):stdout;
      node2stream(node,stream?stream:stdout);printf("\n=\n");
-     node=eval(node,0);
+     node=eval(node);
      node2stream(node,stream?stream:stdout);printf("\n");
      return 0;
  }

@@ -5,18 +5,18 @@
 #include "node.h"
 #include "core.h"
 
-#define REGISTER_FUNC(name) set_value(global_string(#name),make_function_node(#name,lisp_##name));
-#define NAME_FUNC(name) node_t lisp_##name(node_t arg,node_t extra)
+#define REGISTER_FUNC(key,fname) set_value(global_string(key),make_function_node(key,lisp_##fname));
+#define NAME_FUNC(name) node_t lisp_##name(node_t arg)
 
-node_t make_function_node(char* key,meta_func func);
+node_t register_function(char* key,meta_func func);
 
 /* function list */
 
 NAME_FUNC(define);
 NAME_FUNC(sin);
 NAME_FUNC(lambda);
-
-
-
+NAME_FUNC(car);
+NAME_FUNC(cdr);
+NAME_FUNC(cons);
 
 #endif

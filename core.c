@@ -186,36 +186,51 @@ node_t pop_args(node_t args,node_t end){
 	return end;
 }
 
-node_t eval(node_t node,node_t extra){
+node_t apply_function(node_t func,node_t arg){
+	printf("\napply function:");
+	SHOW_NODE(func);
+	return (func->value).func(arg);
+}
+
+node_t apply_lambda(node_t l,node_t inputs){
+	node_t child,args,body,last;
+	printf("\napply lambda:");
+	SHOW_NODE(l);
+	child=(l->value).child;
+	args=child->next;
+	body=args->next;
+	args=(args->value).child;
+	if((last=push_args(args,inputs))==0){ /*if every args are all initiated */
+		child=eval(copy_node(body,0));
+	}
+	pop_args(args,last); /* restore default ENV */
+	return child;
+}
+
+node_t eval(node_t node){
 	node_t var,args,body,inputs,last;
 	value_t value;
 	if(node){
 		value=node->value;
 		switch(node->type){
 			case ATOM:
+				SHOW(node->key,"%p")
+				SHOW_NODE(get_value(node->key))
 				return get_value(node->key);
 				break;
 			case LIST: 
 				var=(node->value).child;
 				if(var&&var->key==QUOTE){return var->next;};
-				while(var){ copy_node_props(eval(var,extra),var);	var=var->next; } /* eval every elements in the list */
+				while(var){ copy_node_props(eval(var),var);	var=var->next; } /* eval every elements in the list */
 				var=(node->value).child;
 				if(!var){ break; }
+				SHOW_NODE(var)
 				switch(var->type){
 					case FUNCTION:
-						return (var->value).func(var->next,extra);
+						return apply_function(var,var->next);
 						break;
 					case LAMBDA:
-						inputs=var->next; 	/* get inputs */
-						var=(var->value).child;
-						args=var->next; 
-						body=args->next;
-						args=(args->value).child;
-						if((last=push_args(args,inputs))==0){ /*if every args are all initiated */
-							var=eval(copy_node(body,0),extra);
-						}
-						pop_args(args,last); /* restore default ENV */
-						return var;
+						return apply_lambda(var,var->next);
 						break;
 					default: 
 						break;

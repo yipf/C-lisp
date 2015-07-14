@@ -25,7 +25,7 @@ typedef char* string_t;
 
 struct node_;
 
-typedef struct node_ * (*meta_func) (struct node_ * n, struct node_ * extra);
+typedef struct node_ * (*meta_func) (struct node_ * n);
 
 typedef union{
 		long int	ivalue;
@@ -49,14 +49,13 @@ node_t create_atom(char* key);
 node_t create_list(node_t child);
 
 node_t copy_node_props(node_t src,node_t dst);
-node_t map_children(meta_func func,node_t child,node_t extra);
 node_t copy_node(node_t src,node_t dst);
 node_t destroy_node(node_t n);
 
 static FILE* ostream;
 
 int pretty_print_string(char * str,FILE* stream);
-node_t node2stream_(node_t node,node_t extra);
+node_t node2stream_(node_t node);
 node_t node2stream(node_t node,FILE* stream);
 
 node_t make_stack(node_t bottom);

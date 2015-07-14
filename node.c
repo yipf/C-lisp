@@ -43,14 +43,6 @@ node_t copy_node_props(node_t src,node_t dst){
 	return dst;
 }
 
-node_t map_children(meta_func func,node_t child,node_t extra){
-	while(child){
-		copy_node_props(child,func(child,extra));
-		child=child->next;
-	}
-	return child;
-}
-
 node_t copy_node(node_t src,node_t dst){
 	node_t child,dchild;
 	dst=copy_node_props(src,dst);
@@ -74,11 +66,9 @@ node_t destroy_node(node_t n){
 	return 0;
 }
 
-node_t node2stream_(node_t node,node_t extra){
-	char* sep;
+node_t node2stream_(node_t node){
 	value_t value;
 	if(!node){fprintf(ostream,"NIL"); return 0;}
-	sep=(extra)?((extra->value).svalue):""; /* init the value of `sep' */
 	value=node->value;
 #ifdef DEBUG
 	fprintf(ostream,"%s:",TYPE_STRINGS[node->type]);
@@ -87,25 +77,29 @@ node_t node2stream_(node_t node,node_t extra){
 		case LIST:
 		case LAMBDA:
 		case MACRO:
-			fprintf(ostream,"(%s",sep);
-			map_children(node2stream_,value.child,extra);
-			fprintf(ostream,")%s",sep);
+			fprintf(ostream,"( ");
+			node=value.child;
+			while(node){
+				node2stream_(node);
+				node=node->next;
+			}
+			fprintf(ostream,") ");
 			break;
 		case INTEGER:
-			fprintf(ostream,"%d%s",value.ivalue,sep);
+			fprintf(ostream,"%d ",value.ivalue);
 			break;
 		case DOUBLE:
-			fprintf(ostream,"%f%s",value.dvalue,sep);
+			fprintf(ostream,"%f ",value.dvalue);
 			break;
 		case STRING:
-			pretty_print_string(value.svalue,ostream);fprintf(ostream,"%s",sep);
+			pretty_print_string(value.svalue,ostream);fprintf(ostream," ");
 			/*fprintf(ostream,"\"%s\"%s",value.svalue,sep);*/
 			break;
 		case ATOM:
-			fprintf(ostream,"%s%s",node->key,sep);
+			fprintf(ostream,"%s ",node->key );
 			break;
 		default: 
-			fprintf(ostream,"%s[%s]%s",node->key,TYPE_STRINGS[node->type],sep);
+			fprintf(ostream,"%s[%s] ",node->key,TYPE_STRINGS[node->type]);
 			break;
 	}
 	return node;
@@ -113,7 +107,7 @@ node_t node2stream_(node_t node,node_t extra){
 
 node_t node2stream(node_t node,FILE* stream){
 	ostream=stream?stream:stdout;
-	return node2stream_(node,create_atom(" "));
+	return node2stream_(node);
 }
 
 node_t make_stack(node_t bottom){

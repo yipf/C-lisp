@@ -19,6 +19,8 @@ node_t append_node(node_t prev,node_t next);
 node_t node2list(node_t node);
 node_t stream2node(FILE* stream);
 
-node_t eval(node_t node,node_t extra);
+node_t apply_function(node_t func,node_t arg);
+node_t apply_lambda(node_t l,node_t inputs);
+node_t eval(node_t node);
 
 #endif
