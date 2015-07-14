@@ -187,8 +187,6 @@ node_t pop_args(node_t args,node_t end){
 }
 
 node_t apply_function(node_t func,node_t arg){
-	printf("\napply function:");
-	SHOW_NODE(func);
 	return (func->value).func(arg);
 }
 
@@ -214,17 +212,16 @@ node_t eval(node_t node){
 		value=node->value;
 		switch(node->type){
 			case ATOM:
-				SHOW(node->key,"%p")
-				SHOW_NODE(get_value(node->key))
 				return get_value(node->key);
 				break;
 			case LIST: 
 				var=(node->value).child;
 				if(var&&var->key==QUOTE){return var->next;};
 				while(var){ copy_node_props(eval(var),var);	var=var->next; } /* eval every elements in the list */
+				printf("\n----------\\");
+				SHOW_NODE(node)
 				var=(node->value).child;
 				if(!var){ break; }
-				SHOW_NODE(var)
 				switch(var->type){
 					case FUNCTION:
 						return apply_function(var,var->next);

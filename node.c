@@ -45,6 +45,7 @@ node_t copy_node_props(node_t src,node_t dst){
 
 node_t copy_node(node_t src,node_t dst){
 	node_t child,dchild;
+	if(!src||src==dst){ return dst; }
 	dst=copy_node_props(src,dst);
 	if(src->type!=LIST){ return dst; }
 	child=(src->value).child;

@@ -4,20 +4,32 @@
 #include <string.h>
 #include "global_string.h"
 
+
+static char TRUE[]="T";
+static char FALSE[]="F";
+
 int init_functions(){
 	register_function("define",lisp_define);
+	register_function("lambda",lisp_lambda);
+	
 	register_function("car",lisp_car);
 	register_function("cdr",lisp_cdr);
 	register_function("cons",lisp_cons);
+	register_function("cond",lisp_cond);
 
+	register_function("empty?",lisp_empty);
+	
 	register_function("sin",lisp_sin);
 	
-/* 	register_function("atom?",is_atom)
- * 	register_function("+",add)
- * 	register_function("-",sub)
- * 	register_function("*",mul)
- * 	register_function("/",div)
- */
+	
+	set_value(TRUE,create_atom(TRUE));
+	set_value(FALSE,create_atom(FALSE));
+	
+	register_function("+",lisp_add);
+	register_function("-",lisp_sub);
+	register_function("*",lisp_mul);
+	register_function("/",lisp_div);
+	
 	return 0;
 }
 
@@ -44,6 +56,29 @@ NAME_FUNC(sin){
 	return arg;
 }
 
+NAME_FUNC(add){
+	node_t next;
+	value_t value;
+	next=arg->next;
+	SHOW_NODE(arg)
+	SHOW_NODE(next)
+	value.dvalue=(arg->value).dvalue+(next->value).dvalue;
+	return create_node(0,DOUBLE,value,0);
+}
+
+NAME_FUNC(sub){
+	return 0;
+}
+
+NAME_FUNC(mul){
+	return 0;
+}
+
+NAME_FUNC(div){
+	return 0;
+}
+
+
 NAME_FUNC(lambda){
 	node_t list,child;
 	child=create_atom("lambda");
@@ -65,9 +100,26 @@ NAME_FUNC(cdr){
 
 NAME_FUNC(cons){
 	node_t list;
-	arg=copy_node(arg,0);
 	list=copy_node(arg->next,0);
+ 	arg=copy_node(arg,0);
 	arg->next=(list->value).child;
 	(list->value).child=arg;
 	return list;
 }
+
+
+NAME_FUNC(cond){
+	if(arg->key==TRUE){
+		return eval(arg->next);
+	}else if(arg=arg->next){
+		return eval(arg->next);
+	}
+	return arg;
+}
+
+NAME_FUNC(empty){
+	printf("EMPTY?");
+	SHOW_NODE(arg);
+	return create_atom((arg->value).child?FALSE:TRUE);
+}
+
