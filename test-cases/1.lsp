@@ -1,17 +1,18 @@
-(sin 1.0)
-(sin (sin 1.57))
+\
+(sin 1.0)\
+(sin (sin 1.57))\
 
-(define `x sin)
+(define `x sin)\
 
-(x (x 1.57))
+(x (x 1.57))\
  
- (empty? `())
+ (empty? `())\
  
- (define `map (lambda `(f l) `(cond (empty? l) l `(cons (f (car l)) (map f (cdr l)))) ))
+ (define `map (lambda `(f l) `(cond (empty? l) l `(cons (f (car l)) (map f (cdr l)))) ))\
  
-map
+map\
 
-(define `l `(1 2 3))
+(define `l `(1 2 3))\
 
 l
 \
@@ -30,13 +31,13 @@ l
 (sin (+ 1.0 0.57))
 \
 (sum `())  \
-(sum `(1.0 2.0))
-(sum `(1.0 2.0 3.0 4.0))
+(sum `(1.0 2.0)) \
+(sum `(1.0 2.0 3.0 4.0)) \
 
 
 
-(map sin `())
-(map sin `(1.57 3.1415926 0))
+(map sin `())   \
+(map sin `(1.57 3.1415926 0)) \
 
 
 ; (empty? ())
@@ -45,5 +46,5 @@ l
 
 ; (cond (empty? `(1 2 3)) map "FALSE")
 
- \
- "end"
+ "end"\
+ 
