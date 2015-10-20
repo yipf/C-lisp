@@ -1,139 +1,81 @@
-#include "node.h"
+#include "core.h"
 
-char TYPE_STRINGS[20][20]={"LIST","FUNCTION","LAMBDA","MACRO","ATOM","ARG","INTEGER","DOUBLE","STRING","STREAM"};
+#include <stdio.h>      /* printf, scanf, puts */
+#include <stdlib.h>      /* calloc memcpy */
+#include <string.h>      /* calloc memcpy */
 
-
-node_t create_node(char* key,int type, value_t value, node_t next){
-	node_t n;
-	n=ALLOC(node_,1);
-	n->key=key;
-	n->type=type;
-	memcpy(&(n->value),&(value),sizeof(value_t));
-	n->next=next;
-	return n;
-}
-
-node_t create_atom(char* key){
-	node_t n;
-	n=ALLOC(node_,1);
-	n->key=key;
-	n->type=ATOM;
-	(n->value).svalue=key;
-	n->next=0;
-	return n;
-}
-
-node_t create_list(node_t child){
-	node_t n;
-	n=ALLOC(node_,1);
-	n->key=TYPE_STRINGS[LIST];
-	n->type=LIST;
-	(n->value).child=child;
-	n->next=0;
-	return n;
-}
-
-node_t copy_node_props(node_t src,node_t dst){
-	if(!src||src==dst){ return dst; }
-	if(!dst){ dst=ALLOC(node_,1); }
-	if(dst==src) return src;
-	dst->key=src->key;
-	dst->type=src->type;
-	memcpy(&(dst->value),&(src->value),sizeof(value_t));
-	return dst;
-}
-
-node_t copy_node(node_t src,node_t dst){
-	node_t child,dchild;
-	if(!src||src==dst){ return dst; }
-	dst=copy_node_props(src,dst);
-	if(src->type!=LIST){ return dst; }
-	child=(src->value).child;
-	if(child){
-		dchild=copy_node(child,0);
-		(dst->value).child=dchild;
-		while(child=child->next){ dchild=(dchild->next=copy_node(child,0));	}
-	}
-	return dst;
-}
-
-node_t destroy_node(node_t n){
-	node_t child;
-	if(n->type==LIST){
-		child=(n->value).child;
-		while(child){ child->next=destroy_node(child->next); }
-	}
-	free(n);
-	return 0;
-}
-
-node_t node2stream_(node_t node){
-	value_t value;
-	if(!node){fprintf(ostream,"NIL"); return 0;}
-	value=node->value;
-#ifdef DEBUG
-	fprintf(ostream,"%s:",TYPE_STRINGS[node->type]);
-#endif
-	switch(node->type){
-		case LIST:
-		case LAMBDA:
-		case MACRO:
-			fprintf(ostream,"( ");
-			node=value.child;
-			while(node){
-				node2stream_(node);
-				node=node->next;
-			}
-			fprintf(ostream,") ");
-			break;
-		case INTEGER:
-			fprintf(ostream,"%d ",value.ivalue);
-			break;
-		case DOUBLE:
-			fprintf(ostream,"%f ",value.dvalue);
-			break;
-		case STRING:
-			pretty_print_string(value.svalue,ostream);fprintf(ostream," ");
-			/*fprintf(ostream,"\"%s\"%s",value.svalue,sep);*/
-			break;
-		case ATOM:
-			fprintf(ostream,"%s ",node->key );
-			break;
-		default: 
-			fprintf(ostream,"%s[%s] ",node->key,TYPE_STRINGS[node->type]);
-			break;
-	}
+node_t new_node(value_t value,node_t cdr){
+	node_t node;
+	node=calloc(1,sizeof(node_));
+	node->car=value;
+	node->cdr=cdr;
 	return node;
 }
 
+node_t string2node(char* string){
+	return new_node(string2value(string),0);
+}
+
+node_t new_list(node_t child){
+	value_t value;
+	value=new_value(0);
+	value->type=LIST;
+	value->ptr=child;
+	return new_node(value,0);
+}
+
+int value2stream(value_* value,FILE*stream){
+	if(!value){
+		fprintf(stream,"() ");
+		return 0;
+	}
+	switch(value->type){
+		case LIST:
+			fprintf(stream,"( ");
+			node2stream(value->ptr,stream);
+			fprintf(stream,") ");
+			break;
+		case NUMBER:
+			fprintf(stream,"%lf ",value->number);
+			break;
+		case INTEGER:
+			fprintf(stream,"%ld ",value->integer);
+			break;
+		default: 
+			fprintf(stream,"%s ",value->key);
+			break;
+	}
+	return 0;
+}
+
 node_t node2stream(node_t node,FILE* stream){
-	ostream=stream?stream:stdout;
-	return node2stream_(node);
-}
-
-node_t make_stack(node_t bottom){
-	return create_list(bottom);
-}
-
-node_t push_stack(node_t stack,node_t element){
-	node_t top;
-	top=(stack->value).child;
-	if(element){
-		(stack->value).child=element;
-		element->next=top;
+	if(node){
+		value2stream(node->car,stream);
+		node2stream(node->cdr,stream);
 	}
-	return stack;
+	return 0;
 }
 
-node_t pop_stack(node_t stack){
-	node_t top;
-	top=(stack->value).child;
-	if(top){
-		(stack->value).child=top->next;
-	}
-	return top;
+int init_buffer(index_t n){
+	LEN=n>0?n:1;
+	BUFFER=calloc(LEN,sizeof(char));
+	return 0;
 }
 
-node_t get_top(node_t stack){
-	return (stack->value).child;
+char* new_string(char* string,index_t n){
+	char *str;
+	str=calloc(n+1,sizeof(char));
+	memcpy(str,string,n);
+	return str;
 }
+
+node_t stream2node(FILE* stream){
+	value_t head,cur;
+	char ch;
+	index_t cur;
+	head=new_value(0);
+	while
+	return new_node(head->next,0);
+}
+
+

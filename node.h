@@ -1,66 +1,31 @@
-#ifndef NODE_H 
-#define NODE_H 
 
-#include "helper.h"
-#include "global_string.h"
-
+#include "value.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-
-
-#define DEBUG_
-
-
-
-#define SHOW_NODE(var) 	printf("\n%s:%d:\t%s\t:: ",__FILE__,__LINE__,#var);node2stream(var,stdout);printf("\n");;
-
-enum TYPES{LIST=0,FUNCTION,LAMBDA,MACRO,ATOM,ARG,INTEGER,DOUBLE,STRING,STREAM};
-char TYPE_STRINGS[20][20];
-
-/* node_ & narray */
-
-typedef char* string_t;
-
-struct node_;
-
-typedef struct node_ * (*meta_func) (struct node_ * n);
-
-typedef union{
-		long int	ivalue;
-		double 	dvalue;
-		char*		svalue;
-		struct node_ * child;
-		FILE* stream;
-		meta_func func;
-} value_t;
 
 typedef struct node_{
-	char* key;	
-	int type;	
-	value_t value;
-	struct node_ * next;
+	value_t car;
+	struct node_ * cdr;
 }node_,*node_t;
 
-node_t create_node(char* key,int type, value_t value, node_t next);
+node_t new_node(value_t value,node_t cdr);
+node_t new_list(node_t child);
 
-node_t create_atom(char* key);
-node_t create_list(node_t child);
+node_t string2node(char* string);
 
-node_t copy_node_props(node_t src,node_t dst);
-node_t copy_node(node_t src,node_t dst);
-node_t destroy_node(node_t n);
-
-static FILE* ostream;
-
-int pretty_print_string(char * str,FILE* stream);
-node_t node2stream_(node_t node);
+int value2stream(value_* value,FILE*stream);
 node_t node2stream(node_t node,FILE* stream);
 
-node_t make_stack(node_t bottom);
-node_t push_stack(node_t stack,node_t element);
-node_t pop_stack(node_t stack);
-node_t get_top(node_t stack);
+typedef unsigned int index_t;
 
-#endif
+static char *BUFFER;
+static index_t LEN;
+
+int init_buffer(index_t n);
+static char* new_string(char* string,index_t n);
+
+node_t stream2node(FILE* stream);
+
+
+
+
+
