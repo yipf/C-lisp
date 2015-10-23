@@ -2,6 +2,64 @@
 
 #define SHOW(var,format) printf("\n%s:%d:\t%s\t:: ",__FILE__,__LINE__,#var);printf(format,var);
 
+static char LIST[];
+static char FUNCTION[];
+static char STRING[];
+static char NUMBER[];
+
+typedef struct node_{
+	union{
+		double number;
+		struct node_ *child;
+		char* string;
+		void* ptr;
+	};
+	char* key;
+	struct node_ *cdr;
+	struct node_ *next; /* for gc*/
+};
+
+static hash_node_t HEAD;
+
+
+
+
+
+
+
+typedef char* hash_key_t;
+typedef void* hash_value_t;
+typedef unsigned int hash_size_t;
+
+typedef struct hash_node_{
+	hash_key_t key;
+	hash_value_t value;
+	struct hash_node_ *cdr;
+	struct hash_node_ *next; /* for gc */
+}hash_node_,*hash_node_t;
+
+typedef struct hash_table_{
+	hash_size_t hash;
+	hash_node_t 
+};
+
+static hash_node_t HEAD;
+
+
+
+hash_node_t create_hash_table(hash_size_t num);
+
+
+
+
+
+
+
+
+
+
+
+
 enum{NIL=0,LIST=1,SYMBOL,INTEGER,NUMBER,STRING,FUNCTION,LAMBDA};
 
 typedef struct value_{
