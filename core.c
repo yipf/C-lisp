@@ -1,174 +1,219 @@
 #include "core.h"
 
-#include <stdlib.h>
 #include <math.h>
 
-node_t make_pair(node_t car,node_t cdr){
-	return new_node(car->car,cdr);
+static hash_node_t HASH;
+static index_t NUM;
+
+hash_node_t alloc_hash_node(char* key,node_t value){
+	hash_node_t node=calloc(1,sizeof(hash_node_));
+	if(key)node->key=key; 	
+	if(value)node->value=value;
+	return node;
 }
 
-node_t get_first(node_t list){
-	value_t value;
-	value=list->car;
-	return (value&&(value->type==LIST))?(value->ptr):0;
+hash_node_t get_node(hash_node_t node,char* key){
+	while(node && (key!=node->key)){	node=node->next; 	}
+	return node;
 }
 
-node_t map(func_t func,node_t list){
-	node_t head,cur,child;
-	child=get_first(list);
-	if(!child) return list;
-	head=func(child);
-	cur=head; 	child=child?(child->cdr):0;
-	while(child){
-		cur->cdr=func(child); 	cur=cur->cdr;
-		child=child->cdr;
-	}
-	return new_list(head);
+hash_node_t init_hash_table(index_t num){
+	NUM=num?num:11;
+	HASH=calloc(num,sizeof(hash_node_));
+	return HASH;
 }
 
-node_t eval(node_t node){
-	value_t value,nvalue;
-	node_t child;
-	value=node->car;
-	if(value){
-		switch(value->type){
-			case LIST:
-				if(child=value->ptr){
-					nvalue=child->car;
-					switch(nvalue->type){
-						case FUNCTION:
-							return ((func_t)(nvalue->ptr))(child->cdr);
-							break;
-						case LAMBDA:
-							break;
-						default: break;
-					}
-				}
-				break;
-			case SYMBOL:
-				return new_node(hash_pop_value(value->key,0),0);
-				break;
-			default: break;
-		}
-	}
-	return new_node(value,0);
+node_t hash_push_value(char* key,node_t value){
+	hash_node_t head,node;
+	head=HASH+key2hash(key,NUM);
+	node=get_node(head->next,key);
+	if(!node){	node=alloc_hash_node(key,0);	node->next=head->next; head->next=node; }
+	head=node;
+	node=alloc_hash_node(0,value); 	node->top=head->top;	head->top=node; 	
+	return value;
+}
+
+node_t hash_pop_value(char* key,int pop){
+	hash_node_t head,node;
+	head=HASH+key2hash(key,NUM);
+	node=get_node(head->next,key);
+	if(!node){return 0;}
+	head=node->top;
+	if(head&&pop){node->top=head->top;}
+	return head?(head->value):0;
 }
 
 int register_function(char* key,func_t func){
-	value_t value;
-	value=new_value(0);
-	value->type=FUNCTION;
-	value->key=key;
-	value->ptr=func;
-	hash_push_value(key,value);
+	node_t node=alloc_node(FUNCTION);
+	node->ptr=func;
+	hash_push_value(unique_string(key,0),node);
 	return 0;
 }
 
-node_t CAR(node_t args){
-	args=get_first(args);
-	return args?new_node(args->car,0):0;
-}
-
-node_t CDR(node_t args){
-	args=get_first(args);
-	return args?new_list(args->cdr):0;
-}
-
-node_t CONS(node_t args){
-	node_t list,cur;
-	list=new_node(args->car,0);
-	cur=list; 	args=get_first(args->cdr);
-	while(args){
-		cur->cdr=new_node(args->car,0);
-		cur=cur->cdr; 	args=args->cdr;
+int push_values(node_t names,node_t args){
+	while(names&&args){
+		hash_push_value(names->string,args); 	
+		names=names->cdr; args=args->cdr;
 	}
-	return new_list(list);
+	return 0;
 }
 
-node_t QUOTE(node_t args){
+int pop_values(node_t names){
+	while(names){		hash_pop_value(names->string,1); 	names=names->cdr;	}
+	return 0;
+}
+
+static node_t call_func(func_t func,node_t node){
+	return func(node);
+}
+
+static node_t call_lambda(node_t names,node_t args){
+	push_values(names->child,args);
+	args=eval(names->cdr);
+	pop_values(names);
 	return args;
 }
 
-node_t MAP(node_t args){
-	value_t value;
-	node_t node;
-	node=eval(args);
-	value=node->car;
-	return map(value->ptr,args->cdr);
+static node_t call(node_t F,node_t args){
+	node_t names;
+	func_t func;
+	switch(F->type){
+		case FUNCTION:  	return call_func(F->ptr,args);			break;
+		case LAMBDA:		return call_lambda(F->child,args);	break;
+		default:
+			break;
+	}
+	MSG(call,"The 1st arg must be callable function or a lambda !")
+	return alloc_node(NIL);
+}
+
+node_t mapf(func_t func,node_t start){
+	node_t head,cur;
+	cur=head=func(start); 
+	while(start=start->cdr){  cur->cdr=func(start); 	cur=cur->cdr;	}
+	return head;
+}
+
+int is_special_func(func_t func){
+	return func==quote || func==lambda ;
+}
+
+node_t eval(node_t args){
+	node_t first;
+	func_t func;
+	if(args){
+		switch(args->type){
+			case SYMBOL:
+				return copy_node(hash_pop_value(args->string,0));			
+				break;
+			case LIST:			
+				args=args->child;
+				first=eval(args);
+				if((first->type==FUNCTION)&&is_special_func(func=first->ptr)){return func(args->cdr);}
+				return call(first,mapf(eval,args->cdr));			
+				break;
+			default: 
+				break;
+		}
+	}
+	return copy_node(args);
+}
+
+node_t apply(node_t args){
+	if(args){		return call(args,args->cdr);	}
+	MSG("APPLY","The 1st arg must be exist!")
+	return alloc_node(NIL);
+}
+
+node_t lambda(node_t args){
+	node_t cdr;
+	cdr=args?args->cdr:0;
+	if(args&&(args->type==LIST)&&cdr&&(cdr->type==LIST)){
+		args=new_list(args);
+		args->type=LAMBDA;
+		return args;
+	}
+	MSG(lambda,"The 2 arg must be both lists !")
+	return alloc_node(NIL);
+}
+
+node_t car(node_t args){
+	if(args&&args->type==LIST){
+		return copy_node(args->child);
+	}
+	MSG(car,"The 1st arg must be a list!");
+	return alloc_node(NIL);
 }
 
 node_t SIN(node_t args){
-	value_t value,nvalue;
-	value=args->car;
-	nvalue=new_value(0);
-	nvalue->type=value->type;
-	nvalue->number=sin(value->number);
-	return new_node(nvalue,0);
+	double number;
+	if(args&&args->type==NUMBER){
+		number=sin(args->number);
+		args=alloc_node(NUMBER);
+		args->number=number;
+		return args;
+	}
+	MSG(sin,"The 1st arg must be a number!");
+	return alloc_node(NIL);
 }
 
-node_t LABEL(node_t args){
-	value_t key,value;
-	key=args->car;
-	args=args->cdr;
-	value=args->car;
-	value=hash_push_value(key->key,hash_pop_value(value->key,0));
-	return new_node(value,0);
+node_t quote(node_t args){
+	return copy_node(args);
 }
 
-
-node_t ADD(node_t args){
-	value_t value;
-	double res;
-	res=0.0;
-	while(args){		value=args->car;		res+=value->number;	args=args->cdr;}
-	value=new_value(0);	value->type=NUMBER;	value->number=res;
-	return new_node(value,0);
+node_t list(node_t args){
+	return new_list(args);
 }
 
-node_t SUB(node_t args){
-	value_t value;
-	double res;
-	res=0.0;
-	while(args){		value=args->car;		res-=value->number;		args=args->cdr;}
-	value=new_value(0);	value->type=NUMBER;	value->number=res;
-	return new_node(value,0);
+node_t set(node_t args){
+	if(args&&(args->type==SYMBOL)&&args->cdr){
+		return copy_node(hash_push_value(args->string,args->cdr));
+	}
+	MSG(set,"The 1st arg must be a symbol and the second one must exist!");
+	return alloc_node(NIL);
 }
 
-node_t MUL(node_t args){
-	value_t value;
-	double res;
-	res=1.0;
-	while(args){		value=args->car;		res*=value->number;	args=args->cdr;}
-	value=new_value(0);	value->type=NUMBER;	value->number=res;
-	return new_node(value,0);
+node_t cons(node_t args){
+	node_t node;
+	if( (node=args->cdr) && node->type==LIST ){
+		args=copy_node(args);
+		args->cdr=node->child;
+		return new_list(args);
+	}
+	MSG(cons,"The second arg must be a list!");
+	return alloc_node(NIL);
 }
 
-node_t DIV(node_t args){
-	value_t value;
-	double res;
-	res=1.0;
-	while(args){		value=args->car;		res/=value->number; 	args=args->cdr;}
-	value=new_value(0);	value->type=NUMBER;	value->number=res;
-	return new_node(value,0);
+node_t cdr(node_t args){
+	if(args&&args->type==LIST){
+		return new_list((args->child)->cdr);
+	}
+	MSG(cdr,"The 1st arg must be a list!");
+	return alloc_node(NIL);
 }
 
-int init_funcs(void){
-	register_function("car",CAR);
-	register_function("cdr",CDR);
-	register_function("cons",CONS);
-	register_function("quote",QUOTE);
-	
-	register_function("eval",eval);
-	register_function("map",MAP);
-	register_function("label",LABEL);
-		
+node_t map(node_t args){
+	node_t head,cur,start;
+	if(args&&(start=args->cdr)&&start->type==LIST){
+		start=start->child;
+		cur=head=call(args,start);
+		while(start=start->cdr){  cur->cdr=call(args,start); 	cur=cur->cdr;	}
+		return new_list(head);
+	}
+	MSG(map,"The 2nd arg must be a list !")
+	return alloc_node(NIL);
+}
+
+int init_functions(void){
+	register_function("car",car);
+	register_function("quote",quote);
 	register_function("sin",SIN);
 	
-	register_function("+",ADD);
-	register_function("-",SUB);
-	register_function("*",MUL);
-	register_function("/",DIV);
-	
-	return 0;
+	register_function("eval",eval);
+	register_function("apply",apply);
+	register_function("list",list);
+	register_function("set",set);
+	register_function("cons",cons);
+	register_function("lambda",lambda);
+	register_function("map",map);
 }
-

@@ -1,121 +1,155 @@
-#include "core.h"
+#include "node.h"
 
-#include <stdio.h>      /* printf, scanf, puts */
-#include <stdlib.h>      /* calloc  */
-#include <string.h>      /* memcpy */
-#include<ctype.h>    /* isspace */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
+static node_t __STACK__=0;
 
-static char NAMES[][10]={"NIL","LIST","SYMBOL","INTEGER","NUMBER","STRING","FUNCTION","LAMBDA"};
+node_t PUSH(node_t top){ /* PUSH(0) return the top of current __STACK__ */
+	if(top){		top->top=__STACK__; 	__STACK__=top;	}
+	return __STACK__;
+}
 
-node_t new_node(value_t value,node_t cdr){
+node_t POP(node_t end,int release){ /* CLEAR nodes until end, the top of stack is end. CLEAR(0) clear all nodes */
+	node_t top;
+	while((top=__STACK__)&&(top!=end)){		__STACK__=__STACK__->top; 	if(release){free(top);}	}
+	__STACK__=__STACK__?(__STACK__->top):__STACK__;		
+	return release?0:top;
+}
+
+index_t count_nodes(node_t end){
+	node_t top;
+	index_t count;
+	top=__STACK__;
+	count=0;
+	while(top&&(top!=end)){
+		count++;  
+		//~ printf("\n%d\t",count);		node2stream(top,stdout);	
+		top=top->top;
+	}
+	return count;
+}
+
+node_t alloc_node(int type){
 	node_t node;
 	node=calloc(1,sizeof(node_));
-	node->car=value;
-	node->cdr=cdr;
+	node->type=type;
+	PUSH(node); /* for gc */
 	return node;
 }
 
-node_t string2node(char* string){
-	return new_node(string2value(string),0);
+node_t new_node(int type,char* string){
+	node_t node;
+	char* str_end;
+	node=alloc_node(type);
+	if(type==STRING){		node->string=string;		return node;	}
+	node->number=strtod(string,&str_end); /* test if `string' is a number */
+	if(*str_end){ /* failed */
+		node->string=string;		
+	}else{ /* success */
+		node->type=NUMBER; 
+	}
+	return node;
+}
+
+node_t copy_node(node_t src){
+	node_t dst=alloc_node(NIL);
+	if(src){ memcpy(dst,src,sizeof(node_)-2*sizeof(node_t));	}
+	return dst;
 }
 
 node_t new_list(node_t child){
-	value_t value;
-	value=new_value(0);
-	value->type=LIST;
-	value->ptr=child;
-	return new_node(value,0);
+	node_t list,last;
+	list=alloc_node(LIST);
+	list->child=child;
+	return list;
 }
 
-int value2stream(value_* value,FILE*stream){
-	if(!value){
-		fprintf(stream,"() ");
-		return 0;
+static char BUFFER[100];
+
+char* buffer2string(index_t n){
+	BUFFER[n]='\0';
+	return unique_string(BUFFER,1);
+}
+
+node_t quote_node(node_t node,index_t quote){
+	node_t head;
+	while(quote--){
+		head=new_node(SYMBOL,unique_string("quote",0));
+		head->cdr=node;
+		node=new_list(head);
 	}
-	switch(value->type){
-		case LIST:
-			fprintf(stream,"( ");
-			node2stream(value->ptr,stream);
-			fprintf(stream,") ");
-			break;
-		case NUMBER:
-			fprintf(stream,"%lf ",value->number);
-			break;
-		case INTEGER:
-			fprintf(stream,"%ld ",value->integer);
-			break;
-		case STRING:
-			fprintf(stream,"%s ",value->key);
-			break;
-		default: 
-			fprintf(stream,"%s:%s ",NAMES[value->type],value->key);
-			break;
-	}
-	return 0;
-}
-
-node_t node2stream(node_t node,FILE* stream){
-	if(node){
-		value2stream(node->car,stream);
-		node2stream(node->cdr,stream);
-	}
-	return 0;
-}
-
-int init_buffer(index_t n){
-	LEN=n>0?n:1;
-	BUFFER=calloc(LEN,sizeof(char));
-	return 0;
-}
-
-char* new_string(char* string,index_t n){
-	char *str;
-	str=calloc(n+1,sizeof(char));
-	memcpy(str,string,n);
-	return str;
+	return node;
 }
 
 node_t stream2node(FILE* stream){
 	node_t head,cur;
 	char ch;
-	index_t n;
-	int inside_string,quote;
-	cur=head=new_node(0,0);
-	n=0;	inside_string=0;
+	index_t  n,inside_string,quote;
+	head=alloc_node(LIST);
+	cur=head;
+	n=0;	inside_string=0; 	quote=0;
 	while((ch=fgetc(stream))!=EOF){
 		if(ch=='\\'){ 			BUFFER[n++]=fgetc(stream);			continue;		}
 		if(inside_string){
 			if(ch=='"'){
-				if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;	 (cur->car)->type=STRING; n=0;	}
+				if(n>0){ cur->cdr=quote_node(new_node(STRING,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
 				inside_string=0;
 			}else{				BUFFER[n++]=ch;			}			
 			continue;
 		}
 		if(ch==')'){ break;} /* return list */
 		switch(ch){
-			case ';':  /* start a commit line */
-				if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;		n=0;	}
+			case ';':  /* head a commit line */
+				if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
 				while((ch=fgetc(stream))!='\n'&&ch!=EOF);
 				break;
-			case '"': /* start a string */
-				if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;		n=0;	}
+			case '"': /* head a string */
+				if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
 				inside_string=1;
 				break;
-			case '(':  /* start a list */
-				if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;		n=0;	}
-				cur->cdr=stream2node(stream);				cur=cur->cdr; 
+			case '(':  /* head a list */
+				if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
+				cur->cdr=quote_node(stream2node(stream),quote);		cur=cur->cdr;  quote=0;
+				break;
+			case '`':  /* head a quote */
+				if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
+				quote++;
 				break;
 			default: 
 				if(isspace(ch)){ /* if space */
-					if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;		n=0;	}
+					if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
 				}else{					BUFFER[n++]=ch;				}
 				break;
 		}
 	}
-	if(n>0){ cur->cdr=string2node(new_string(BUFFER,n));	cur=cur->cdr;		n=0;	}
-	cur=head->cdr;		free(head);
-	return new_list(cur);
+	if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
+	head->child=head->cdr; 	head->cdr=0;
+	return head;
 }
 
-
+int node2stream(node_t node,FILE* stream){
+	node_t last;
+	if(!node) return 0;
+	switch(node->type){
+			case NIL:	 			fprintf(stream,"NIL ");											break;
+			case NUMBER:	 	fprintf(stream,"%lf ",node->number);				break;
+			case STRING:			fprintf(stream,"\"%s\" ",node->string);				break;
+			case SYMBOL:		fprintf(stream,"%s ",node->string);					break;
+			case FUNCTION:		fprintf(stream,"<function:%p> ",node->ptr);	break;
+			case LAMBDA:		
+				fprintf(stream,"LAMBDA: "); 
+				node2stream((node=node->child),stream);		
+				node2stream((node->cdr),stream);		
+				break;
+			case LIST:				
+				fprintf(stream,"( ");	 
+				if(node=node->child){ while(node){ node2stream(node,stream); node=node->cdr; }}
+				fprintf(stream,") ");		
+				break;
+		default: break;
+	}
+	return 0;
+}

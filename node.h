@@ -1,33 +1,38 @@
+#ifndef NODE_H
+#define NODE_H
 
-#include "value.h"
+#include "str.h"
+
+#include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
-static char NAMES[][10];
+enum{NIL=0,LIST,SYMBOL,NUMBER,STRING,FUNCTION,LAMBDA};
 
 typedef struct node_{
-	value_t car;
-	struct node_ * cdr;
+	union{
+		double number;
+		char* string;
+		struct node_ * child;
+		void* ptr;
+	};
+	int type;
+	struct node_* cdr;
+	struct node_* top; /* for gc */
 }node_,*node_t;
 
-node_t new_node(value_t value,node_t cdr);
+node_t PUSH(node_t node);
+node_t POP(node_t end,int release);
+index_t count_nodes(node_t end);
+
+node_t alloc_node(int type);
+node_t new_node(int type,char* string);
+node_t copy_node(node_t src);
 node_t new_list(node_t child);
 
-node_t string2node(char* string);
-
-int value2stream(value_* value,FILE*stream);
-node_t node2stream(node_t node,FILE* stream);
-
-typedef unsigned int index_t;
-
-static char *BUFFER;
-static index_t LEN;
-
-int init_buffer(index_t n);
-static char* new_string(char* string,index_t n);
-
+char* buffer2string(index_t n);
+node_t quote_node(node_t node,index_t quote);
 node_t stream2node(FILE* stream);
+int node2stream(node_t node,FILE* stream);
 
-
-
-
-
+#endif
