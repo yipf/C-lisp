@@ -50,7 +50,7 @@ int register_function(char* key,func_t func){
 	return 0;
 }
 
-int push_values(node_t names,node_t args){
+static int push_values(node_t names,node_t args){
 	while(names&&args){
 		hash_push_value(names->string,args); 	
 		names=names->cdr; args=args->cdr;
@@ -58,16 +58,9 @@ int push_values(node_t names,node_t args){
 	return 0;
 }
 
-int pop_values(node_t names){
+static int pop_values(node_t names){
 	while(names){		hash_pop_value(names->string,1); 	names=names->cdr;	}
 	return 0;
-}
-
-static node_t apply_lambda(node_t names,node_t args){
-	push_values(names->child,args);
-	args=eval(names->cdr);
-	pop_values(names);
-	return args;
 }
 
 static node_t mapf(func_t func,node_t start){
@@ -77,36 +70,51 @@ static node_t mapf(func_t func,node_t start){
 	return head;
 }
 
+static node_t get_value(node_t node){
+	return copy_node((node->type==SYMBOL)?hash_pop_value(node->string,0):node);
+}
+
+static node_t get_values(node_t node){
+	if(node&&node->type==LIST){
+		return new_list(mapf(get_value,node->child));
+	}
+	return get_value(node);
+}
+
 node_t eval(node_t args){
 	node_t first;
 	func_t func;
-	if(args){
-		switch(args->type){
-			case SYMBOL:
-				return copy_node(hash_pop_value(args->string,0));			
+	MSG(eval,"") 	node2stream(args,stdout);
+	if(args&&(args->type==LIST)){
+		args=args->child;
+		first=eval(args);
+		args=args->cdr;
+		switch(first->type){
+			case FUNCTION:
+				func=first->ptr;
+				if( func==quote || func==macro || func==lambda ) {return func(args);}
+				return func(mapf(eval,args));
 				break;
-			case LIST:			
-				args=args->child;
-				first=eval(args);
-				args=args->cdr;
-				switch(first->type){
-					case FUNCTION:
-						func=first->ptr;
-						if( func==quote || func==macro ) {return func(args);}
-						return func(mapf(eval,args));
-						break;
-					case LAMBDA: 	
-						args=mapf(eval,args);
-					case MACRO:
-						return apply_lambda(first->child,args);
-						break;
-					default: break;
-				}
-				MSG(eval,"The 1st arg must be callable function or a lambda !")
-				return alloc_node(NIL);
+			case LAMBDA: 	
+				first=first->child;
+				push_values(first->child,mapf(eval,args));
+				args=eval(first->cdr);
+				pop_values(first->child);
+				return args;
+				break;
+			case MACRO:
+				first=first->child;
+				push_values(first->child,args);
+				args=eval(get_values(first->cdr));
+				pop_values(first->child);
+				return args;
+				break;
+			default: break;
 		}
+		MSG(eval,"The 1st arg must be callable function or a lambda !")
+		return alloc_node(NIL);
 	}
-	return copy_node(args);
+	return get_value(args);
 }
 
 node_t apply(node_t args){
