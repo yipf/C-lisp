@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-enum{NIL=0,LIST,SYMBOL,NUMBER,STRING,FUNCTION,LAMBDA};
+enum{NIL=0,LIST,SYMBOL,NUMBER,STRING,FUNCTION,LAMBDA,MACRO};
 
 typedef struct node_{
 	union{

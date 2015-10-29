@@ -140,9 +140,11 @@ int node2stream(node_t node,FILE* stream){
 			case SYMBOL:		fprintf(stream,"%s ",node->string);					break;
 			case FUNCTION:		fprintf(stream,"<function:%p> ",node->ptr);	break;
 			case LAMBDA:		
-				fprintf(stream,"LAMBDA: "); 
+			case MACRO:		
+				fprintf(stream,(node->type==LAMBDA)?"<lambda: ":"<macro:"); 
 				node2stream((node=node->child),stream);		
 				node2stream((node->cdr),stream);		
+				fprintf(stream,"> ");		
 				break;
 			case LIST:				
 				fprintf(stream,"( ");	 

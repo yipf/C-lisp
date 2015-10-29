@@ -30,4 +30,5 @@ node_t apply(node_t args);
 node_t set(node_t args);
 node_t cons(node_t args);
 node_t lambda(node_t args);
+node_t macro(node_t args);
 node_t SIN(node_t args);

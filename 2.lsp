@@ -7,9 +7,15 @@ list
 
 (list a 1 `(1 2))
 
-(set `a (lambda (x) (sin (sin x))))
+(set `defun  (macro (id args body) (set id (lambda args body))))
+
+(defun a (x) (sin x))
+
+(set `b (lambda `(x) `(sin (sin x))))
+; (set `a (macro (x) (sin (sin x))))
 
 (eval `(sin 1.0))
+
 
 
 ; (set `x 3.0)
@@ -20,7 +26,7 @@ list
 
 ; x
 
-; (map sin `(0.5 1 2))
+(map sin `(0.5 1 2))
 
 ; `a
 ; a

@@ -55,6 +55,7 @@ int push_values(node_t names,node_t args){
 		hash_push_value(names->string,args); 	
 		names=names->cdr; args=args->cdr;
 	}
+	while(names){ hash_push_value(names->string,alloc_node(NIL));		 names=names->cdr;		} /* fill the rest args with NILs*/
 	return 0;
 }
 
@@ -63,18 +64,39 @@ int pop_values(node_t names){
 	return 0;
 }
 
-static node_t apply_lambda(node_t names,node_t args){
+static node_t call_func(func_t func,node_t node){
+	return func(node);
+}
+
+static node_t call_lambda(node_t names,node_t args){
 	push_values(names->child,args);
 	args=eval(names->cdr);
 	pop_values(names);
 	return args;
 }
 
-static node_t mapf(func_t func,node_t start){
+static node_t call(node_t F,node_t args){
+	node_t names;
+	func_t func;
+	switch(F->type){
+		case FUNCTION:  	return call_func(F->ptr,args);			break;
+		case LAMBDA:		return call_lambda(F->child,args);	break;
+		default:
+			break;
+	}
+	MSG(call,"The 1st arg must be callable function or a lambda !")
+	return alloc_node(NIL);
+}
+
+node_t mapf(func_t func,node_t start){
 	node_t head,cur;
 	cur=head=func(start); 
 	while(start=start->cdr){  cur->cdr=func(start); 	cur=cur->cdr;	}
 	return head;
+}
+
+int is_special_func(func_t func){
+	return func==quote || func==lambda ;
 }
 
 node_t eval(node_t args){
@@ -88,29 +110,18 @@ node_t eval(node_t args){
 			case LIST:			
 				args=args->child;
 				first=eval(args);
-				args=args->cdr;
-				switch(first->type){
-					case FUNCTION:
-						func=first->ptr;
-						if( func==quote || func==macro ) {return func(args);}
-						return func(mapf(eval,args));
-						break;
-					case LAMBDA: 	
-						args=mapf(eval,args);
-					case MACRO:
-						return apply_lambda(first->child,args);
-						break;
-					default: break;
-				}
-				MSG(eval,"The 1st arg must be callable function or a lambda !")
-				return alloc_node(NIL);
+				if((first->type==FUNCTION)&&is_special_func(func=first->ptr)){return func(args->cdr);}
+				return call(first,mapf(eval,args->cdr));			
+				break;
+			default: 
+				break;
 		}
 	}
 	return copy_node(args);
 }
 
 node_t apply(node_t args){
-	if(args){		return eval(new_list(args));	}
+	if(args){		return call(args,args->cdr);	}
 	MSG("APPLY","The 1st arg must be exist!")
 	return alloc_node(NIL);
 }
@@ -118,24 +129,12 @@ node_t apply(node_t args){
 node_t lambda(node_t args){
 	node_t cdr;
 	cdr=args?args->cdr:0;
-	if(args&&(args->type==LIST)&&cdr){
+	if(args&&(args->type==LIST)&&cdr&&(cdr->type==LIST)){
 		args=new_list(args);
 		args->type=LAMBDA;
 		return args;
 	}
-	MSG(lambda,"The 1st arg must be a  list and the 2nd one must exist!")
-	return alloc_node(NIL);
-}
-
-node_t macro(node_t args){
-	node_t cdr;
-	cdr=args?args->cdr:0;
-	if(args&&(args->type==LIST)&&cdr&&(cdr->type==LIST)){
-		args=new_list(args);
-		args->type=MACRO;
-		return args;
-	}
-	MSG(macro,"The 1st arg must be a  list and the 2nd one must exist!")
+	MSG(lambda,"The 2 arg must be both lists !")
 	return alloc_node(NIL);
 }
 
@@ -195,12 +194,11 @@ node_t cdr(node_t args){
 }
 
 node_t map(node_t args){
-	node_t head,cur,start;	
+	node_t head,cur,start;
 	if(args&&(start=args->cdr)&&start->type==LIST){
 		start=start->child;
-		args->cdr=start;
-		cur=head=eval(new_list(args));
-		while(start=start->cdr){  args->cdr=start; cur->cdr=eval(new_list(args));	cur=cur->cdr;	}
+		cur=head=call(args,start);
+		while(start=start->cdr){  cur->cdr=call(args,start); 	cur=cur->cdr;	}
 		return new_list(head);
 	}
 	MSG(map,"The 2nd arg must be a list !")
@@ -218,6 +216,5 @@ int init_functions(void){
 	register_function("set",set);
 	register_function("cons",cons);
 	register_function("lambda",lambda);
-	register_function("macro",macro);
 	register_function("map",map);
 }
