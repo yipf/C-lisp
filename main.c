@@ -1,3 +1,4 @@
+
 #include "core.h"
 
 int main(){
@@ -8,13 +9,12 @@ int main(){
 	
 	n=stream2node(stdin);
 	node2stream(n,stdout);
-	
+	MSG(count_nodes(0),"%d\t(total nodes)")
 	printf("\n=\n");
 	node2stream(eval(n),stdout);
-	MSG(count_nodes(n),"%d\t(after eval nodes)")
-	MSG(count_nodes(0),"%d\t(after eval nodes)")
-	printf("\n");
+
+	MSG(count_nodes(0),"%d\t(total nodes)")
 	POP(0,1);
-	MSG(count_nodes(0),"%d\t(after eval nodes)")
+	MSG(count_nodes(0),"%d\t(after eval nodes)\n")
 	return 0;
 }

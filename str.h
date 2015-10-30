@@ -2,7 +2,9 @@
 #ifndef STR_H
 #define STR_H
 
+
 #define MSG(var,format) printf("\n%s:%d:\t%s\t:: ",__FILE__,__LINE__,#var);printf(format,var);
+
 
 typedef unsigned int index_t;
 

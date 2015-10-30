@@ -53,7 +53,7 @@ int register_function(char* key,func_t func){
 static int push_values(node_t names,node_t args){
 	while(names&&args){
 		hash_push_value(names->string,args); 	
-		MSG(names->string,"%s\t->\t") node2stream(args,stdout);printf("\n");
+		MSG(names->string,"%s\t->\t") node2stream(args,stdout);
 		names=names->cdr; args=args->cdr;
 	}
 	while(names){ hash_push_value(names->string,alloc_node(NIL)); 		names=names->cdr;}
@@ -72,52 +72,55 @@ static node_t mapf(func_t func,node_t start){
 	return head;
 }
 
-static node_t expand(node_t target,node_t keys,node_t values){
-	node_t key,value;
-	char* string;
-	int type=target->type;
-	if(type==SYMBOL){
-		string=target->string; 	key=keys; 	value=values;
-		while(key&&(key->string!=string)){key=key->cdr; 	value=value?(value->cdr):0;}
-		if(key&&value){ return copy_node(value);}
-	}else if(type==LIST){
-		target=target->child;
-		key=value=expand(target,keys,values);
-		while(target=target->cdr){key->cdr=expand(target,keys,values); 	key=key->cdr;}
-		return new_list(value);
+static node_t get_value(node_t node){
+	return copy_node((node->type==SYMBOL)?hash_pop_value(node->string,0):node);
+}
+
+static node_t expand(node_t node){
+	if(node&&node->type==LIST){
+		return new_list(mapf(expand,node->child));
 	}
-	return copy_node(target);
+	return get_value(node);
 }
 
 node_t eval(node_t args){
-	func_t func;
 	node_t first;
-	if((args->type==LIST)&&(first=args->child)){
-		args=first->cdr;
-		first=eval(first);
+	func_t func;
+	if(args&&(args->type==LIST)){
+		MSG(args,"LIST:") node2stream(args,stdout);
+		args=args->child;
+		MSG(args,"first:") node2stream(args,stdout);
+		first=eval(args);
+		MSG(first,"node:") 	node2stream(first,stdout);
+		args=args->cdr;
+		MSG(args,"args:") 	node2stream(args,stdout);
 		switch(first->type){
 			case FUNCTION:
 				func=first->ptr;
-				if(func==quote || func==macro || func==lambda) return func(args);
+				if( func==quote || func==macro || func==lambda ) {return func(args);}
 				return func(mapf(eval,args));
 				break;
-			case LAMBDA:
-				first=first->child; 
+			case LAMBDA: 	
+				first=first->child;
 				push_values(first->child,mapf(eval,args));
 				args=eval(first->cdr);
 				pop_values(first->child);
 				return args;
 				break;
 			case MACRO:
-				first=first->child; 
-				return eval(expand(first->cdr,first->child,args));
+				printf("\nMacro");
+				first=first->child;
+				push_values(first->child,args);
+				args=eval(expand(first->cdr));
+				pop_values(first->child);
+				return args;
 				break;
 			default: break;
 		}
-		MSG(eval,"The 1st of a list must be a function or lambda/macro")
+		MSG(eval,"The 1st arg must be callable function or a lambda !")
 		return alloc_node(NIL);
 	}
-	return copy_node((args->type==SYMBOL)?hash_pop_value(args->string,0):args);
+	return get_value(args);
 }
 
 node_t apply(node_t args){
@@ -178,10 +181,9 @@ node_t list(node_t args){
 	return new_list(args);
 }
 
-node_t set(node_t key){
-	node_t value;
-	if(key&&(key->type==SYMBOL)&&(value=key->cdr)){
-		return copy_node(hash_push_value(key->string,value));
+node_t set(node_t args){
+	if(args&&(args->type==SYMBOL)&&(args=args->cdr)){
+		return copy_node(hash_push_value(args->string,args));
 	}
 	MSG(set,"The 1st arg must be a symbol and the second one must exist!");
 	return alloc_node(NIL);
