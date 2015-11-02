@@ -53,7 +53,6 @@ int register_function(char* key,func_t func){
 static int push_values(node_t names,node_t args){
 	while(names&&args){
 		hash_push_value(names->string,args); 	
-		MSG(names->string,"%s\t->\t") node2stream(args,stdout);printf("\n");
 		names=names->cdr; args=args->cdr;
 	}
 	while(names){ hash_push_value(names->string,alloc_node(NIL)); 		names=names->cdr;}
@@ -72,18 +71,18 @@ static node_t mapf(func_t func,node_t start){
 	return head;
 }
 
-static node_t expand(node_t target,node_t keys,node_t values){
+static node_t replace_args(node_t target,node_t keys,node_t values){
 	node_t key,value;
 	char* string;
 	int type=target->type;
 	if(type==SYMBOL){
 		string=target->string; 	key=keys; 	value=values;
 		while(key&&(key->string!=string)){key=key->cdr; 	value=value?(value->cdr):0;}
-		if(key&&value){ return copy_node(value);}
+		if(key&&value){ return copy_node(value); 	}
 	}else if(type==LIST){
 		target=target->child;
-		key=value=expand(target,keys,values);
-		while(target=target->cdr){key->cdr=expand(target,keys,values); 	key=key->cdr;}
+		key=value=replace_args(target,keys,values);
+		while(target=target->cdr){key->cdr=replace_args(target,keys,values); 	key=key->cdr;}
 		return new_list(value);
 	}
 	return copy_node(target);
@@ -110,7 +109,7 @@ node_t eval(node_t args){
 				break;
 			case MACRO:
 				first=first->child; 
-				return eval(expand(first->cdr,first->child,args));
+				return eval(replace_args(first->cdr,first->child,args));
 				break;
 			default: break;
 		}
@@ -118,6 +117,10 @@ node_t eval(node_t args){
 		return alloc_node(NIL);
 	}
 	return copy_node((args->type==SYMBOL)?hash_pop_value(args->string,0):args);
+}
+
+node_t eval_with_gc(node_t node){
+	return GC(eval(node));
 }
 
 node_t apply(node_t args){

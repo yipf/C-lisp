@@ -25,6 +25,8 @@ node_t car(node_t args);
 node_t cdr(node_t args);
 node_t quote(node_t args);
 
+node_t eval_with_gc(node_t node);
+
 node_t list(node_t args);
 node_t apply(node_t args);
 node_t set(node_t args);

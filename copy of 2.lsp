@@ -3,22 +3,22 @@ list
 (car `(1 2 3))
 car
 
-; (set `a (lambda (x) (sin x)))
+(set `a (lambda (x) (sin x)))
 
-; a
+a
 
-; (a (sin 1.0))
+(a (sin 1.0))
 
-; (set `defun (macro (id args body) (set `id (lambda args body))))
-; (set `defmacro (macro (id args body) (set `id (macro args body))))
+(set `defun (macro (id args body) (set `id (lambda args body))))
+(set `defmacro (macro (id args body) (set `id (macro args body))))
 
-; (defmacro a (x) (sin x))
+(defmacro a (x) (sin x))
 
-; (defun c (x y) (cons x y))
+(defun c (x y) (cons x y))
 
-; (a  (sin 1.0))
+(a  (sin 1.0))
 
-; (c `1.0 `(2.0 3.0))
+(c `1.0 `(2.0 3.0))
 
 ; (car `(a b c))
 

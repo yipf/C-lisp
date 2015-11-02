@@ -7,14 +7,16 @@ int main(){
 	init_hash_table(101);/* for eval */
 	init_functions();
 	
+	LOCK(0);
+	
 	n=stream2node(stdin);
+	MSG(count_nodes(0),"%d\t(first gc)\n")
 	node2stream(n,stdout);
-	MSG(count_nodes(0),"%d\t(total nodes)")
 	printf("\n=\n");
-	node2stream(eval(n),stdout);
-
-	MSG(count_nodes(0),"%d\t(total nodes)")
-	POP(0,1);
-	MSG(count_nodes(0),"%d\t(after eval nodes)\n")
+	n=eval_with_gc(n);
+	node2stream(n,stdout);
+	MSG(count_nodes(0),"%d\t(total nodes)\n")
+	CLEAR(1);
+	MSG(count_nodes(0),"%d\t(after clear nodes)\n")
 	return 0;
 }

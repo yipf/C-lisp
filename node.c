@@ -6,17 +6,59 @@
 #include <ctype.h>
 
 static node_t __STACK__=0;
+static node_t __CURRENT__=0;
 
 node_t PUSH(node_t top){ /* PUSH(0) return the top of current __STACK__ */
-	if(top){		top->top=__STACK__; 	__STACK__=top;	}
+	if(top){	top->ref=1;	top->top=__STACK__; 	__STACK__=top;	}
 	return __STACK__;
 }
 
-node_t POP(node_t end,int release){ /* CLEAR nodes until end, the top of stack is end. CLEAR(0) clear all nodes */
+node_t CLEAR(int release){ /* CLEAR nodes until end, the top of stack is end. CLEAR(0) clear all nodes */
 	node_t top;
-	while((top=__STACK__)&&(top!=end)){		__STACK__=__STACK__->top; 	if(release){free(top);}	}
+	while((top=__STACK__)&&top){		__STACK__=__STACK__->top; 	if(release){free(top);}	}
 	__STACK__=__STACK__?(__STACK__->top):__STACK__;		
 	return release?0:top;
+}
+
+node_t LOCK(node_t node){
+	return __CURRENT__=node?node:__STACK__;
+}
+
+node_t SWEEP(node_t top){
+	node_t prev,cur;
+	if(!top) return top;
+	prev=top; 
+	cur=prev->top;
+	while(cur&&cur!=__CURRENT__){
+		if(cur->ref>1){ 	/* if other referce this node */
+			cur->ref--;
+			prev=cur;
+		}else{ /* if no reference, the free the node */
+			prev->top=cur->top;
+			free(cur);
+		}
+		cur=prev->top;
+	}
+	return top;
+}
+
+
+node_t MARK(node_t top){
+	if(top){
+		top->ref++;
+		if(top->type==LIST){
+			top=top->child;
+			while(top){  MARK(top);	top=top->cdr;	}
+		}
+	}
+	return top;
+}
+
+node_t GC(node_t node){
+	MARK(node);
+	SWEEP(node);
+	//~ LOCK(node);
+	return node;
 }
 
 index_t count_nodes(node_t end){
@@ -26,7 +68,7 @@ index_t count_nodes(node_t end){
 	count=0;
 	while(top&&(top!=end)){
 		count++;  
-		//~ printf("\n%d\t",count);		node2stream(top,stdout);	
+		printf("\n%d\t%d\t",count,top->ref);		node2stream(top,stdout);	
 		top=top->top;
 	}
 	return count;

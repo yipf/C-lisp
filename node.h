@@ -18,11 +18,17 @@ typedef struct node_{
 	};
 	int type;
 	struct node_* cdr;
-	struct node_* top; /* for gc */
+	/* for gc */
+	struct node_* top; 
+	unsigned int ref;
 }node_,*node_t;
 
 node_t PUSH(node_t node);
-node_t POP(node_t end,int release);
+node_t LOCK(node_t node);
+node_t CLEAR(int release);
+node_t SWEEP(node_t top);
+node_t MARK(node_t top);
+node_t GC(node_t node);
 index_t count_nodes(node_t end);
 
 node_t alloc_node(int type);
