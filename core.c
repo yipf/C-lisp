@@ -64,7 +64,7 @@ static int pop_values(node_t names){
 	return 0;
 }
 
-static node_t mapf(func_t func,node_t start){
+node_t mapf(func_t func,node_t start){
 	node_t head,cur;
 	cur=head=func(start); 
 	while(start=start->cdr){  cur->cdr=func(start); 	cur=cur->cdr;	}
@@ -228,6 +228,7 @@ int init_functions(void){
 	register_function("sin",SIN);
 	
 	register_function("eval",eval);
+	register_function("gc",GC);
 	register_function("apply",apply);
 	register_function("list",list);
 	register_function("set",set);

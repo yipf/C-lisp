@@ -20,6 +20,8 @@ node_t hash_pop_value(char* key,int pop);
 int register_function(char* key,func_t func);
 int init_functions(void);
 
+node_t mapf(func_t func,node_t start);
+
 node_t eval(node_t args);
 node_t car(node_t args);
 node_t cdr(node_t args);

@@ -1,7 +1,12 @@
-list
+
+(eval `(sin 2.0))
+
+; (gc)
+
 
 (car `(1 2 3))
 car
+
 
 ; (set `a (lambda (x) (sin x)))
 
@@ -20,7 +25,8 @@ car
 
 ; (c `1.0 `(2.0 3.0))
 
-; (car `(a b c))
+(car `(a b c))
+
 
 ; (list a 1 `(1 2))
 
@@ -55,9 +61,9 @@ car
 
 "map"
 ; (map sin `(0.5 1 2))
-
 ; `a
 ; a
+
 
 ; (label b a)
 

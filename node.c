@@ -31,7 +31,7 @@ node_t SWEEP(node_t top){
 	cur=prev->top;
 	while(cur&&cur!=__CURRENT__){
 		if(cur->ref>1){ 	/* if other referce this node */
-			cur->ref--;
+			//~ cur->ref--;
 			prev=cur;
 		}else{ /* if no reference, the free the node */
 			prev->top=cur->top;
@@ -57,7 +57,7 @@ node_t MARK(node_t top){
 node_t GC(node_t node){
 	MARK(node);
 	SWEEP(node);
-	//~ LOCK(node);
+	LOCK(node);
 	return node;
 }
 
@@ -168,8 +168,8 @@ node_t stream2node(FILE* stream){
 		}
 	}
 	if(n>0){ cur->cdr=quote_node(new_node(SYMBOL,buffer2string(n)),quote); 	cur=cur->cdr;	  n=0;	quote=0;}
-	head->child=head->cdr; 	head->cdr=0;
-	return head;
+	//~ head->child=head->cdr; 	head->cdr=0;
+	return new_list(head->cdr);
 }
 
 int node2stream(node_t node,FILE* stream){
